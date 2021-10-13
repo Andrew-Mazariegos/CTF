@@ -40,63 +40,120 @@ $user = $_COOKIE["cookie"];
 
 if($action == "deposit"){
 	//get current balance
-	$userStatement = $mysqli->prepare("SELECT balances.balance FROM users WHERE username=?;");
+	$balanceStatement = $mysqli->prepare("SELECT balance FROM balances WHERE username=?;");
 
-	$userStatement->bind_param("s", $user);
+	$balanceStatement->bind_param("s", $user);
 
-	$userStatement->execute();
+	$balanceStatement->execute();
 
-	$results = $userStatement->get_result();
+	$results = $balanceStatement->get_result();
 	if(!$results) {
 		echo $mysqli->error;
 		exit();
 	}
-	$balance = $results->fetch_assoc();
+
+	$balance = null;
+	if ($results->num_rows > 0) {
+		$balance = $results->fetch_assoc();
+	}
+	else {
+		echo "Unable to successfully deposit amount, please try again.";
+		exit();
+	}
 
 	//add to balance
 	$balance += $amount;
 	//update balance with new amount
-	$sqladd = "UPDATE balances SET balance = $balance WHERE username=$user;";
-	$results2 = $mysqli->query($sqladd);
-	if( !$results2) {
+	$updateStatement = $mysqli->prepare("UPDATE balances SET balance=? WHERE username=?;");
+	$updateStatement->bind_param("is", $balance, $user);
+	$updateStatement->execute();
+
+	$results = $updateStatement->get_result();
+	if(!$results) {
 		echo $mysqli->error;
+		exit();
+	}
+
+	if ($mysqli->affected_rows > 0) {
+		echo "Successfully deposited amount, your balance is currently: " + $balance;
+	}
+	else {
+		echo "Unable to successfully deposit amount, please try again.";
 		exit();
 	}
 }
 else if($action == "withdraw"){
 	//get current balance
-	$sql = "SELECT balances.balance WHERE username=$user;";
-	$results = $mysqli->query($sql);
-	if( !$results) {
+	$balanceStatement = $mysqli->prepare("SELECT balance FROM balances WHERE username=?;");
+
+	$balanceStatement->bind_param("s", $user);
+
+	$balanceStatement->execute();
+
+	$results = $balanceStatement->get_result();
+	if(!$results) {
 		echo $mysqli->error;
 		exit();
 	}
+
+	$balance = null;
+	if ($results->num_rows > 0) {
+		$balance = $results->fetch_assoc();
+	}
+	else {
+		echo "Unable to successfully withdraw amount, please try again.";
+		exit();
+	}
 	//check if sufficient funds and subtract from balance
-	if($results < $amount){
+	if ($balance < $amount) {
 		//error
-		echo "not enough money in account to make this withdrawal";
+		echo "Not enough money in account to make this withdrawal.";
 		exit();
 	}
 	else{
-		$results -= $amount;
+		$balance -= $amount;
 		//update balance with new amount
-		$sqladd = "UPDATE balances SET balance = $results WHERE username=$user;";
-		$results2 = $mysqli->query($sqladd);
-		if( !$results2) {
+		$updateStatement = $mysqli->prepare("UPDATE balances SET balance=? WHERE username=?;");
+		$updateStatement->bind_param("is", $balance, $user);
+		$updateStatement->execute();
+
+		$results = $updateStatement->get_result();
+		if(!$results) {
 			echo $mysqli->error;
+			exit();
+		}
+
+		if ($mysqli->affected_rows > 0) {
+			echo "Successfully withdraw amount, your balance is currently: " + $balance;
+		}
+		else {
+			echo "Unable to successfully withdraw amount, please try again.";
 			exit();
 		}
 	}
 }
 else if($action == "balance"){
 	//get current balance
-	$sql = "SELECT balances.balance WHERE username=$user;";
-	$results = $mysqli->query($sql);
-	if( !$results) {
+	$balanceStatement = $mysqli->prepare("SELECT balance FROM balances WHERE username=?;");
+
+	$balanceStatement->bind_param("s", $user);
+
+	$balanceStatement->execute();
+
+	$results = $balanceStatement->get_result();
+	if(!$results) {
 		echo $mysqli->error;
 		exit();
 	}
-	echo "balance=" . $results;
+
+	if ($results->num_rows > 0) {
+		$balance = $results->fetch_assoc();
+		echo "Your current balance is: " + $balance;
+	}
+	else {
+		echo "Unable to successfully retrieve balance, please try again.";
+		exit();
+	}
 }
 else if($action == "close"){
 	exit();
