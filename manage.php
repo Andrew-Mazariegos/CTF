@@ -9,11 +9,11 @@ var_dump($_GET);
 
 // ---- STEP 1: Establish DB connection
 $host = "303.itpwebdev.com";
-$user = "nayeon_db_user";
-$password = "uscItp2020!";
+$mysqlUser = "nayeon_db_user";
+$mysqlPassword = "uscItp2020!";
 $db = "nayeon_song_db";
 
-$mysqli = new mysqli($host, $user, $password, $db);
+$mysqli = new mysqli($host, $mysqlUser, $mysqlPassword, $db);
 
 // Check for errors
 // connect_errno will return an error code if there is an error when attempting to connect to the db.
