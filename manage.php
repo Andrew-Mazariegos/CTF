@@ -1,9 +1,11 @@
 <?php
+
+if (!isset($_COOKIE["cookie"]) || empty($_COOKIE["cookie"])) {
+	echo "Login in to access your account.";
+	exit();
+}
 	
 var_dump($_GET);
-echo $_GET["action"];
-echo $_GET["amount"];
-
 
 // ---- STEP 1: Establish DB connection
 $host = "303.itpwebdev.com";
@@ -25,24 +27,36 @@ if( $mysqli->connect_errno){
 // Set character set
 $mysqli->set_charset("utf8");
 
+if (!isset($_GET["action"]) || empty($_GET["action"]) || !isset($_GET["amount"]) || empty($_GET["amount"])) {
+	echo "Action and/or amount not entered";
+	exit();
+}
+
 //get user and password and insert into database
 $action = $_GET["action"];
 $amount = $_GET["amount"];
 
-$user; //HOW TO GET THEIR USERNAME? 
+$user = $_COOKIE["cookie"]; 
 
 if($action == "deposit"){
 	//get current balance
-	$sql = "SELECT balances.balance WHERE username=$user;";
-	$results = $mysqli->query($sql);
-	if( !$results) {
+	$userStatement = $mysqli->prepare("SELECT balances.balance FROM users WHERE username=?;");
+
+	$userStatement->bind_param("s", $user);
+
+	$userStatement->execute();
+
+	$results = $userStatement->get_result();
+	if(!$results) {
 		echo $mysqli->error;
 		exit();
 	}
+	$balance = $results->fetch_assoc();
+
 	//add to balance
-	$results += $amount;
+	$balance += $amount;
 	//update balance with new amount
-	$sqladd = "UPDATE balances SET balance = $results WHERE username=$user;";
+	$sqladd = "UPDATE balances SET balance = $balance WHERE username=$user;";
 	$results2 = $mysqli->query($sqladd);
 	if( !$results2) {
 		echo $mysqli->error;
